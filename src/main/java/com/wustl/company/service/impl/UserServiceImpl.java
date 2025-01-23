@@ -32,10 +32,10 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .targetIndustry(registerDTO.getTargetIndustry())
                 .preferredLocation(registerDTO.getPreferredLocation())
-                .workLifeBalanceWeight(registerDTO.getWorkLifeBalanceWeight())
-                .salaryWeight(registerDTO.getSalaryWeight())
-                .workingHoursWeight(registerDTO.getWorkingHoursWeight())
-                .overtimeHoursWeight(registerDTO.getOvertimeHoursWeight())
+                .workLifeBalanceScore(registerDTO.getWorkLifeBalanceScore())
+                .salaryScore(registerDTO.getSalaryScore())
+                .workingHoursScore(registerDTO.getWorkingHoursScore())
+                .overtimeHoursScore(registerDTO.getOvertimeHoursScore())
                 .build();
 
         userMapper.insert(user);

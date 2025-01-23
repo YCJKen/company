@@ -44,6 +44,46 @@
                         <el-option label="广州" value="Guangzhou" />
                     </el-select>
                 </el-form-item>
+                <el-form-item prop="workLifeBalanceScore" label="工作生活平衡评分">
+                    <el-input-number 
+                        v-model="form.workLifeBalanceScore"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        :controls-position="'right'"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item prop="salaryScore" label="期望月薪（元）">
+                    <el-input-number 
+                        v-model="form.salaryScore"
+                        :min="0"
+                        :max="100000"
+                        :step="1000"
+                        :controls-position="'right'"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item prop="workingHoursScore" label="期望每日工作时长（小时）">
+                    <el-input-number 
+                        v-model="form.workingHoursScore"
+                        :min="4"
+                        :max="12"
+                        :step="0.5"
+                        :controls-position="'right'"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item prop="overtimeHoursScore" label="可接受的月加班时长（小时）">
+                    <el-input-number 
+                        v-model="form.overtimeHoursScore"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        :controls-position="'right'"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="handleSubmit" :loading="loading">注册</el-button>
                     <el-button @click="$router.push('/login')">已有账号？去登录</el-button>
@@ -70,10 +110,10 @@ const form = reactive({
     password: '',
     targetIndustry: '',
     preferredLocation: '',
-    workLifeBalanceWeight: 1.0,
-    salaryWeight: 1.0,
-    workingHoursWeight: 1.0,
-    overtimeHoursWeight: 1.0
+    workLifeBalanceScore: 50,
+    salaryScore: 10000,
+    workingHoursScore: 8,
+    overtimeHoursScore: 20
 })
 
 const rules = {
@@ -82,7 +122,23 @@ const rules = {
         { required: true, message: '请输入邮箱', trigger: 'blur' },
         { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
     ],
-    password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+    workLifeBalanceScore: [
+        { required: true, message: '请输入工作生活平衡评分', trigger: 'blur' },
+        { type: 'number', min: 0, max: 100, message: '分值必须在0-100之间', trigger: 'change' }
+    ],
+    salaryScore: [
+        { required: true, message: '请输入期望月薪', trigger: 'blur' },
+        { type: 'number', min: 0, message: '薪资不能小于0', trigger: 'change' }
+    ],
+    workingHoursScore: [
+        { required: true, message: '请输入期望工作时长', trigger: 'blur' },
+        { type: 'number', min: 4, max: 12, message: '工作时长应在4-12小时之间', trigger: 'change' }
+    ],
+    overtimeHoursScore: [
+        { required: true, message: '请输入可接受的加班时长', trigger: 'blur' },
+        { type: 'number', min: 0, message: '加班时长不能小于0', trigger: 'change' }
+    ]
 }
 
 const handleSubmit = async () => {
@@ -119,5 +175,8 @@ const handleSubmit = async () => {
 .el-button {
     width: 45%;
     margin: 0 2.5%;
+}
+:deep(.el-input-number) {
+    width: 100%;
 }
 </style> 

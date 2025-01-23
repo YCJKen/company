@@ -18,10 +18,22 @@ public class User {
     private String name;
     private String email;
     private String password;
+    
+    @TableField("target_industry")
     private String targetIndustry;
+    
+    @TableField("preferred_location")
     private String preferredLocation;
-    private Float workLifeBalanceWeight;
-    private Float salaryWeight;
-    private Float workingHoursWeight;
-    private Float overtimeHoursWeight;
+    
+    @TableField("work_life_balance_score")
+    private Integer workLifeBalanceScore;
+    
+    @TableField("salary_score")
+    private Integer salaryScore;
+    
+    @TableField("working_hours_score")
+    private Integer workingHoursScore;
+    
+    @TableField("overtime_hours_score")
+    private Integer overtimeHoursScore;
 } 

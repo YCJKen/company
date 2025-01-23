@@ -18,8 +18,9 @@ public class UserRegisterDTO {
     
     private String targetIndustry;
     private String preferredLocation;
-    private Float workLifeBalanceWeight;
-    private Float salaryWeight;
-    private Float workingHoursWeight;
-    private Float overtimeHoursWeight;
+    
+    private Integer workLifeBalanceScore;
+    private Integer salaryScore;
+    private Integer workingHoursScore;
+    private Integer overtimeHoursScore;
 } 
