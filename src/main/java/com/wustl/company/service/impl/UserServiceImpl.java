@@ -6,6 +6,7 @@ import com.wustl.company.dto.UserRegisterDTO;
 import com.wustl.company.entity.User;
 import com.wustl.company.mapper.UserMapper;
 import com.wustl.company.service.UserService;
+import com.wustl.company.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Override
     public User register(UserRegisterDTO registerDTO) {
@@ -53,7 +55,11 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("邮箱或密码错误");
         }
         
-        user.setPassword(null); // 返回前清除密码
+        // 生成token
+        String token = jwtUtil.generateToken(user.getUserId());
+        user.setPassword(null);
+        // 设置token
+        user.setToken(token);
         return user;
     }
 } 

@@ -36,6 +36,7 @@ import { useRouter } from 'vue-router'
 import { userApi } from '../api/user'
 import { ElMessage } from 'element-plus'
 import { Message, Lock } from '@element-plus/icons-vue'
+import { setToken } from '../utils/auth'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -62,6 +63,8 @@ const handleSubmit = async () => {
         loading.value = true
         const response = await userApi.login(form)
         if (response.data.code === 200) {
+            // 保存token
+            setToken(response.data.data.token)
             ElMessage.success('登录成功')
             router.push('/home')
         } else {

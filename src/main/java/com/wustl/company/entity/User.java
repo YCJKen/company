@@ -36,4 +36,8 @@ public class User {
     
     @TableField("overtime_hours_score")
     private Integer overtimeHoursScore;
+
+    // 添加token字段，但不持久化到数据库
+    @TableField(exist = false)
+    private String token;
 } 
