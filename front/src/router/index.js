@@ -3,6 +3,8 @@ import { getToken } from '../utils/auth'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+import OfferListView from '../views/offer/OfferListView.vue'
+import OfferCreateView from '../views/offer/OfferCreateView.vue'
 
 const routes = [
     {
@@ -24,6 +26,18 @@ const routes = [
         path: '/register',
         name: 'register',
         component: RegisterView
+    },
+    {
+        path: '/offers',
+        name: 'offers',
+        component: OfferListView,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/offers/create',
+        name: 'offer-create',
+        component: OfferCreateView,
+        meta: { requiresAuth: true }
     }
 ]
 
