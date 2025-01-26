@@ -53,5 +53,8 @@ export const offerApi = {
     },
     deleteOffer(offerId) {
         return api.delete(`/offers/${offerId}`)
+    },
+    getRecommendedOffers(pageNum = 1, pageSize = 10) {
+        return api.get(`/offers/recommended?pageNum=${pageNum}&pageSize=${pageSize}`)
     }
 } 

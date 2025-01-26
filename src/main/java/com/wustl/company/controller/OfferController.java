@@ -1,5 +1,6 @@
 package com.wustl.company.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wustl.company.common.Result;
 import com.wustl.company.common.Results;
 import com.wustl.company.dto.OfferCreateDTO;
@@ -37,5 +38,15 @@ public class OfferController {
         Integer userId = (Integer) request.getAttribute("userId");
         offerService.deleteOffer(offerId, userId);
         return Results.success("删除成功", null);
+    }
+
+    @GetMapping("/recommended")
+    public Result<IPage<Offer>> getRecommendedOffers(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        IPage<Offer> offers = offerService.getRecommendedOffers(userId, pageNum, pageSize);
+        return Results.success(offers);
     }
 } 

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Date;
 
 @Data
 @Builder
@@ -49,4 +50,7 @@ public class Offer {
     
     @TableField("offer_date")
     private LocalDate offerDate;
+    
+    @TableField(exist = false)  // 这个字段不在数据库中
+    private Double similarity;
 } 

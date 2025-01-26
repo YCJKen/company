@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wustl.company.dto.UserLoginDTO;
 import com.wustl.company.dto.UserRegisterDTO;
 import com.wustl.company.entity.User;
+import com.wustl.company.exception.BusinessException;
 import com.wustl.company.mapper.UserMapper;
 import com.wustl.company.service.UserService;
 import com.wustl.company.utils.JwtUtil;
@@ -20,28 +21,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User register(UserRegisterDTO registerDTO) {
-        // 检查邮箱是否已存在
+        // 检查用户名是否已存在
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getEmail, registerDTO.getEmail());
+        queryWrapper.eq(User::getName, registerDTO.getName());
         if (userMapper.selectOne(queryWrapper) != null) {
-            throw new RuntimeException("该邮箱已被注册");
+            throw new BusinessException("用户名已存在");
         }
-
-        // 使用Builder模式创建新用户
+        
+        // 创建新用户
         User user = User.builder()
-                .name(registerDTO.getName())
+                .name(registerDTO.getName())  // 使用 username 而不是 name
                 .email(registerDTO.getEmail())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
-                .targetIndustry(registerDTO.getTargetIndustry())
-                .preferredLocation(registerDTO.getPreferredLocation())
+                .targetIndustry(registerDTO.getTargetIndustry())  // 使用 industry
+                .preferredLocation(registerDTO.getPreferredLocation())  // 使用 location
                 .workLifeBalanceScore(registerDTO.getWorkLifeBalanceScore())
                 .salaryScore(registerDTO.getSalaryScore())
                 .workingHoursScore(registerDTO.getWorkingHoursScore())
                 .overtimeHoursScore(registerDTO.getOvertimeHoursScore())
                 .build();
-
+        
         userMapper.insert(user);
-        user.setPassword(null); // 返回前清除密码
         return user;
     }
 
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.selectOne(queryWrapper);
         
         if (user == null || !passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
-            throw new RuntimeException("邮箱或密码错误");
+            throw new BusinessException("邮箱或密码错误");
         }
         
         // 生成token
