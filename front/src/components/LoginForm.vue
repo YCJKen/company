@@ -65,6 +65,8 @@ const handleSubmit = async () => {
         if (response.data.code === 200) {
             // 保存token
             setToken(response.data.data.token)
+            // 保存用户信息
+            localStorage.setItem('userInfo', JSON.stringify(response.data.data))
             ElMessage.success('登录成功')
             router.push('/home')
         } else {

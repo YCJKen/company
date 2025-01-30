@@ -50,5 +50,8 @@ export const userApi = {
     },
     login(data) {
         return api.post('/users/login', data)
+    },
+    updateUserInfo(data) {
+        return api.put('/users/update', data)
     }
 } 

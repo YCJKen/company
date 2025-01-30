@@ -3,6 +3,7 @@ package com.wustl.company.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wustl.company.dto.UserLoginDTO;
 import com.wustl.company.dto.UserRegisterDTO;
+import com.wustl.company.dto.UserUpdateDTO;
 import com.wustl.company.entity.User;
 import com.wustl.company.exception.BusinessException;
 import com.wustl.company.mapper.UserMapper;
@@ -61,5 +62,33 @@ public class UserServiceImpl implements UserService {
         // 设置token
         user.setToken(token);
         return user;
+    }
+
+    @Override
+    public User updateUser(Integer userId, UserUpdateDTO updateDTO) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 使用 Builder 模式更新用户信息
+        User updatedUser = User.builder()
+                .userId(user.getUserId())  // 保持原有ID
+                .name(updateDTO.getName())
+                .email(user.getEmail())    // 保持原有邮箱
+                .password(user.getPassword())  // 保持原有密码
+                .targetIndustry(updateDTO.getTargetIndustry())
+                .preferredLocation(updateDTO.getPreferredLocation())
+                .salaryScore(updateDTO.getSalaryScore().intValue())
+                .workingHoursScore(updateDTO.getWorkingHoursScore())
+                .workLifeBalanceScore(updateDTO.getWorkLifeBalanceScore())
+                .overtimeHoursScore(updateDTO.getOvertimeHoursScore())
+                .build();
+        
+        userMapper.updateById(updatedUser);
+        
+        // 清除密码后返回
+        updatedUser.setPassword(null);
+        return updatedUser;
     }
 } 

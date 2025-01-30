@@ -38,6 +38,12 @@ const routes = [
         name: 'offer-create',
         component: OfferCreateView,
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/posts',
+        name: 'posts',
+        component: () => import('../views/PostView.vue'),
+        meta: { requiresAuth: true }
     }
 ]
 
