@@ -44,13 +44,13 @@
                     </template>
 
                     <div class="post-content">
-                        <p class="text">{{ post.content }}</p>
-                        <div class="images" v-if="post.imageUrls?.length">
+                        <div class="text">{{ post.content }}</div>
+                        <div v-if="post.imageUrls && post.imageUrls.length > 0" class="images">
                             <el-image
                                 v-for="(url, index) in post.imageUrls"
                                 :key="index"
-                                :src="url"
-                                :preview-src-list="post.imageUrls"
+                                :src="getFullImageUrl(url)"
+                                :preview-src-list="getFullImageUrlList(post.imageUrls)"
                                 fit="cover"
                             />
                         </div>
@@ -89,7 +89,7 @@
         <!-- 发帖对话框 -->
         <el-dialog
             v-model="showCreateDialog"
-            title="发布新帖子"
+            title="发布帖子"
             width="500px"
         >
             <el-form
@@ -102,17 +102,19 @@
                         v-model="createForm.content"
                         type="textarea"
                         :rows="4"
-                        placeholder="分享你的想法..."
+                        placeholder="写点什么..."
                     />
                 </el-form-item>
 
                 <el-form-item>
                     <el-upload
-                        action="/api/upload"
+                        action="#"
                         list-type="picture-card"
-                        :on-success="handleUploadSuccess"
-                        :on-remove="handleUploadRemove"
-                        multiple
+                        :auto-upload="false"
+                        :on-change="handleImageChange"
+                        :on-remove="handleImageRemove"
+                        :limit="9"
+                        ref="uploadRef"
                     >
                         <el-icon><Plus /></el-icon>
                     </el-upload>
@@ -120,12 +122,12 @@
             </el-form>
 
             <template #footer>
-                <span class="dialog-footer">
+                <div class="dialog-footer">
                     <el-button @click="showCreateDialog = false">取消</el-button>
-                    <el-button type="primary" @click="handleCreate" :loading="creating">
+                    <el-button type="primary" @click="handleCreatePost" :loading="creating">
                         发布
                     </el-button>
-                </span>
+                </div>
             </template>
         </el-dialog>
 
@@ -167,6 +169,20 @@
                         :format="format"
                         :status="getProgressStatus(selectedUser.overtimeHoursScore)"
                     />
+                </div>
+                <div class="actions" v-if="selectedUser.userId !== currentUserId">
+                    <el-button 
+                        type="primary" 
+                        @click="sendFriendRequest(selectedUser.userId)"
+                    >
+                        添加好友
+                    </el-button>
+                    <el-button 
+                        type="success" 
+                        @click="openChat(selectedUser)"
+                    >
+                        发送消息
+                    </el-button>
                 </div>
             </div>
         </el-dialog>
@@ -220,6 +236,12 @@
                 </div>
             </div>
         </el-dialog>
+
+        <!-- 聊天对话框 -->
+        <ChatDialog
+            v-model:visible="showChatDialog"
+            :friend="selectedUser"
+        />
     </div>
 </template>
 
@@ -228,7 +250,10 @@ import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserFilled, Star, ChatDotRound, More, Plus } from '@element-plus/icons-vue'
 import { postApi } from '../api/post'
+import { userApi } from '../api/user'
+import { uploadApi } from '../api/upload'
 import dayjs from 'dayjs'
+import ChatDialog from './ChatDialog.vue'
 
 const loading = ref(false)
 const creating = ref(false)
@@ -245,10 +270,12 @@ const currentUserId = ref(JSON.parse(localStorage.getItem('userInfo'))?.userId)
 const selectedUser = ref(null)
 const comments = ref([])
 const currentPostId = ref(null)
+const showChatDialog = ref(false)
 
+const uploadRef = ref(null)
 const createForm = ref({
     content: '',
-    imageUrls: []
+    images: []
 })
 
 const rules = {
@@ -279,17 +306,51 @@ const loadPosts = async () => {
     }
 }
 
-const handleCreate = async () => {
+const handleCreatePost = async () => {
+    if (!createForm.value.content.trim()) {
+        ElMessage.warning('请输入内容')
+        return
+    }
+    
     try {
         creating.value = true
-        const response = await postApi.createPost(createForm.value)
+        const imageUrls = []
+        
+        if (createForm.value.images && createForm.value.images.length > 0) {
+            for (const file of createForm.value.images) {
+                try {
+                    const formData = new FormData()
+                    formData.append('file', file.raw)
+                    
+                    const response = await uploadApi.uploadFile(formData)
+                    if (response.data.code === 200 && response.data.data) {
+                        const imageUrl = response.data.data.startsWith('http') 
+                            ? response.data.data 
+                            : `http://localhost:8080${response.data.data}`
+                        imageUrls.push(imageUrl)
+                    }
+                } catch {
+                    ElMessage.error('部分图片上传失败')
+                }
+            }
+        }
+        
+        const response = await postApi.createPost({
+            content: createForm.value.content,
+            imageUrls: imageUrls
+        })
+        
         if (response.data.code === 200) {
             ElMessage.success('发布成功')
+            createForm.value.content = ''
+            createForm.value.images = []
+            if (uploadRef.value) {
+                uploadRef.value.clearFiles()
+            }
             showCreateDialog.value = false
-            createForm.value = { content: '', imageUrls: [] }
-            loadPosts()
+            await loadPosts()
         }
-    } catch (error) {
+    } catch {
         ElMessage.error('发布失败')
     } finally {
         creating.value = false
@@ -331,14 +392,19 @@ const handlePageChange = (page) => {
     loadPosts()
 }
 
-const handleUploadSuccess = (response) => {
-    createForm.value.imageUrls.push(response.url)
+const handleImageChange = (uploadFile) => {
+    if (uploadFile && uploadFile.raw) {
+        if (!createForm.value.images) {
+            createForm.value.images = []
+        }
+        createForm.value.images.push(uploadFile)
+    }
 }
 
-const handleUploadRemove = (file) => {
-    const index = createForm.value.imageUrls.indexOf(file.url)
-    if (index > -1) {
-        createForm.value.imageUrls.splice(index, 1)
+const handleImageRemove = (uploadFile) => {
+    const index = createForm.value.images.findIndex(f => f.uid === uploadFile.uid)
+    if (index !== -1) {
+        createForm.value.images.splice(index, 1)
     }
 }
 
@@ -430,6 +496,35 @@ const handleDeleteComment = async (commentId) => {
             ElMessage.error('删除失败')
         }
     }
+}
+
+const sendFriendRequest = async (friendId) => {
+    try {
+        await userApi.sendFriendRequest(friendId)
+        ElMessage.success('好友请求已发送')
+        showUserDialog.value = false
+    } catch (error) {
+        ElMessage.error('发送请求失败')
+    }
+}
+
+const openChat = (user) => {
+    showUserDialog.value = false
+    showChatDialog.value = true
+}
+
+// 添加处理图片URL的方法
+const getFullImageUrl = (url) => {
+    if (!url) return '';
+    // 如果已经是完整URL，直接返回
+    if (url.startsWith('http')) return url;
+    // 否则添加域名
+    return `http://localhost:8080${url}`;
+}
+
+const getFullImageUrlList = (urls) => {
+    if (!urls || !Array.isArray(urls)) return [];
+    return urls.map(url => getFullImageUrl(url));
 }
 
 onMounted(() => {
@@ -595,5 +690,22 @@ onMounted(() => {
 
 .comment-input .el-input {
     flex: 1;
+}
+
+.actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.el-upload--picture-card {
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+}
+
+.el-upload-list--picture-card .el-upload-list__item {
+    width: 100px;
+    height: 100px;
 }
 </style> 

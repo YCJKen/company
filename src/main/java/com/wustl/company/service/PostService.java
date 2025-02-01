@@ -17,4 +17,4 @@ public interface PostService {
     List<PostComment> getComments(Long postId, Integer userId);
     PostComment createComment(CommentCreateDTO createDTO, Integer userId);
     void deleteComment(Long commentId, Integer userId);
-} 
+}

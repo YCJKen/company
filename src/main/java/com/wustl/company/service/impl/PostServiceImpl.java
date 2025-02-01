@@ -20,9 +20,12 @@ import com.wustl.company.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,69 +35,104 @@ public class PostServiceImpl implements PostService {
     private final PostLikeMapper postLikeMapper;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
+    private static final Logger log = LoggerFactory.getLogger(PostServiceImpl.class);
     
     @Override
     @Transactional
     public Post createPost(PostCreateDTO createDTO, Integer userId) {
+        log.info("Creating post with content: {} and images: {}", createDTO.getContent(), createDTO.getImageUrls());
+        
         // 创建帖子
         Post post = Post.builder()
                 .userId(userId)
                 .content(createDTO.getContent())
                 .likesCount(0)
                 .commentsCount(0)
-                .status(1)
+                .status(1)  // 设置为正常状态
                 .build();
         
+        // 先保存帖子，获取帖子ID
         postMapper.insert(post);
         
-        // 保存图片
+        // 保存图片到数据库
+        List<String> savedImageUrls = new ArrayList<>();
         if (createDTO.getImageUrls() != null && !createDTO.getImageUrls().isEmpty()) {
-            IntStream.range(0, createDTO.getImageUrls().size())
-                    .forEach(i -> {
-                        PostImage image = PostImage.builder()
-                                .postId(post.getPostId())
-                                .imageUrl(createDTO.getImageUrls().get(i))
-                                .imageOrder(i)
-                                .build();
-                        postImageMapper.insert(image);
-                    });
-            post.setImageUrls(createDTO.getImageUrls());
+            log.info("Processing {} images", createDTO.getImageUrls().size());
+            
+            for (int i = 0; i < createDTO.getImageUrls().size(); i++) {
+                String imageUrl = createDTO.getImageUrls().get(i);
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    // 移除 URL 中的域名部分，只保存相对路径
+                    String relativeUrl = imageUrl;
+                    if (imageUrl.contains("localhost:8080")) {
+                        relativeUrl = imageUrl.substring(imageUrl.indexOf("/uploads"));
+                    }
+                    
+                    log.info("Saving image with URL: {}", relativeUrl);
+                    
+                    PostImage image = PostImage.builder()
+                            .postId(post.getPostId())
+                            .imageUrl(relativeUrl)
+                            .imageOrder(i)
+                            .build();
+                    
+                    postImageMapper.insert(image);
+                    savedImageUrls.add(relativeUrl);
+                }
+            }
         }
+        
+        // 设置发帖用户信息
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setPassword(null);
+            post.setUser(user);
+        }
+        
+        // 设置已保存的图片URL列表
+        post.setImageUrls(savedImageUrls);
+        log.info("Post created with ID: {} and {} images", post.getPostId(), savedImageUrls.size());
         
         return post;
     }
     
     @Override
     public IPage<Post> getPosts(Integer userId, Integer pageNum, Integer pageSize) {
+        // 分页查询帖子
         Page<Post> page = new Page<>(pageNum, pageSize);
-        
-        // 获取帖子列表
         IPage<Post> postPage = postMapper.selectPage(page, new LambdaQueryWrapper<Post>()
                 .eq(Post::getStatus, 1)
                 .orderByDesc(Post::getCreatedAt));
         
-        // 填充每个帖子的图片、点赞状态和用户信息
+        // 填充每个帖子的附加信息
         postPage.getRecords().forEach(post -> {
-            // 获取图片
-            List<String> imageUrls = postImageMapper.selectList(new LambdaQueryWrapper<PostImage>()
+            // 查询帖子图片
+            List<PostImage> images = postImageMapper.selectList(
+                new LambdaQueryWrapper<PostImage>()
                     .eq(PostImage::getPostId, post.getPostId())
-                    .orderByAsc(PostImage::getImageOrder))
-                    .stream()
+                    .orderByAsc(PostImage::getImageOrder)
+            );
+            
+            // 设置图片URL列表
+            post.setImageUrls(images.stream()
                     .map(PostImage::getImageUrl)
-                    .toList();
-            post.setImageUrls(imageUrls);
+                    .collect(Collectors.toList()));
             
-            // 检查当前用户是否点赞
-            PostLike like = postLikeMapper.selectOne(new LambdaQueryWrapper<PostLike>()
-                    .eq(PostLike::getPostId, post.getPostId())
-                    .eq(PostLike::getUserId, userId));
-            post.setIsLiked(like != null);
+            // 设置发帖用户信息
+            User user = userMapper.selectById(post.getUserId());
+            if (user != null) {
+                user.setPassword(null);
+                post.setUser(user);
+            }
             
-            // 获取发布者信息
-            User postUser = userMapper.selectById(post.getUserId());
-            if (postUser != null) {
-                postUser.setPassword(null);  // 清除敏感信息
-                post.setUser(postUser);
+            // 查询当前用户是否点赞
+            if (userId != null) {
+                PostLike like = postLikeMapper.selectOne(
+                    new LambdaQueryWrapper<PostLike>()
+                        .eq(PostLike::getPostId, post.getPostId())
+                        .eq(PostLike::getUserId, userId)
+                );
+                post.setIsLiked(like != null);
             }
         });
         

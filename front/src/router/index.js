@@ -5,6 +5,7 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import OfferListView from '../views/offer/OfferListView.vue'
 import OfferCreateView from '../views/offer/OfferCreateView.vue'
+import FriendListView from '../views/FriendListView.vue'
 
 const routes = [
     {
@@ -43,6 +44,12 @@ const routes = [
         path: '/posts',
         name: 'posts',
         component: () => import('../views/PostView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/friends',
+        name: 'friends',
+        component: FriendListView,
         meta: { requiresAuth: true }
     }
 ]

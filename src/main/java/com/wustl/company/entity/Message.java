@@ -12,18 +12,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("PostImages")
-public class PostImage {
-    @TableId(value = "image_id", type = IdType.AUTO)
-    private Long imageId;
+@TableName("Messages")
+public class Message {
+    @TableId(value = "message_id", type = IdType.AUTO)
+    private Long messageId;
     
-    private Long postId;
+    private Integer senderId;
     
-    @TableField("image_url")
-    private String imageUrl;
+    private Integer receiverId;
     
-    private Integer imageOrder;
+    private String content;
+    
+    private Integer status;  // 0-未读，1-已读
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+    
+    @TableField(exist = false)
+    private User sender;  // 发送者信息
 } 

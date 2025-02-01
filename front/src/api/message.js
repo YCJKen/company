@@ -29,11 +29,11 @@ api.interceptors.response.use(
     error => {
         if (error.response) {
             switch (error.response.status) {
-                case 401: // 未认证
+                case 401:
                     ElMessage.error('请先登录')
                     router.push('/login')
                     break
-                case 403: // 权限不足
+                case 403:
                     ElMessage.error('权限不足')
                     break
                 default:
@@ -44,29 +44,14 @@ api.interceptors.response.use(
     }
 )
 
-export const userApi = {
-    register(data) {
-        return api.post('/users/register', data)
+export const messageApi = {
+    sendMessage(data) {
+        return api.post('/messages', data)
     },
-    login(data) {
-        return api.post('/users/login', data)
+    getConversation(friendId) {
+        return api.get(`/messages/conversation/${friendId}`)
     },
-    updateUserInfo(data) {
-        return api.put('/users/update', data)
-    },
-    searchUsers(keyword) {
-        return api.get(`/users/search?keyword=${keyword}`)
-    },
-    sendFriendRequest(friendId) {
-        return api.post('/users/friends/request', { friendId })
-    },
-    handleFriendRequest(friendId, accept) {
-        return api.post(`/users/friends/handle?accept=${accept}`, { friendId })
-    },
-    getFriendRequests() {
-        return api.get('/users/friends/requests')
-    },
-    getFriends() {
-        return api.get('/users/friends')
+    getUnreadCount() {
+        return api.get('/messages/unread/count')
     }
 } 

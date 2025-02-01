@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @Data
 @Builder
@@ -35,7 +36,7 @@ public class Post {
     private LocalDateTime updatedAt;
     
     @TableField(exist = false)
-    private List<String> imageUrls;  // 图片URL列表
+    private List<String> imageUrls = new ArrayList<>();  // 初始化为空列表而不是null
     
     @TableField(exist = false)
     private User user;  // 发帖用户信息
